@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bomb Defusal Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Handjet:wght@100..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tagesschrift&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Tagesschrift', sans-serif;
+      background: #000;
+      color: #000;
+      text-align: center;
+      padding: 20px;
+    }
+    #bomb {
+      position: relative;
+      width: 200px;
+      margin: 20px auto;
+    }
+    #bomb img {
+      width: 100%;
+    }
+    #timer {
+      font-family: 'Handjet', sans-serif;
+      font-size: 2em;
+      color: red;
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    #quote {
+      margin-top: 30px;
+      font-size: 1.2em;
+      color: #000;
+      background: url("https://t3.ftcdn.net/jpg/05/22/09/84/360_F_522098443_RkHVRP3SRb8fTKRu1pXy1H4D0lLeRVfb.png") no-repeat center center;
+      background-size: cover;
+      padding: 30px;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      min-height: 150px;
+      background-color: transparent;
+    }
+    #inputArea {
+      margin-top: 20px;
+      display: none;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 1em;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin-left: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 1.5em;
+    }
+    #startButton {
+      margin-top: 30px;
+      padding: 15px 40px;
+      font-size: 1.5em;
+      background: linear-gradient(45deg, #28a745, #218838);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    #startButton:hover {
+      background: linear-gradient(45deg, #218838, #1e7e34);
+      transform: scale(1.05);
+    }
+    #explosion {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url("https://media.tenor.com/images/7d6e6a3ae47f17830c498cd3bbba9fd1/tenor.gif") center center no-repeat;
+      background-size: cover;
+      display: none;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <h1>defuse the bomb!</h1>
+  <div id="bomb">
+    <img id="bombImage" src="https://i.imgur.com/Fx4n2LQ.png" alt="Bomb">
+    <div id="timer">15</div>
+  </div>
+  <div id="quote">click start to begin...</div>
+  <div id="inputArea">
+    <input type="text" id="userInput" placeholder="enter the secret code...">
+    <button onclick="checkCode()">defuse</button>
+  </div>
+  <div id="message"></div>
+  <button id="startButton" onclick="startGame()">start</button>
+  <div id="explosion"></div>
+
+  <audio id="explosionSound" src="https://www.soundjay.com/explosion/explosion-01.mp3"></audio>
+  <audio id="successSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
+  <canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;display:none;"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+  <script>
+    let timer = 15;
+    let interval;
+    let secretCode = '';
+
+    function generateCode(length = 6) {
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let code = '';
+      for (let i = 0; i < length; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    function getCompleteSentences(text, minLength = 150) {
+      const sentences = text.match(/[^.!?]+[.!?]/g) || [];
+      let result = '';
+      for (let sentence of sentences) {
+        if (result.length < minLength) {
+          result += sentence + ' ';
+        } else {
+          break;
+        }
+      }
+      return result.trim();
+    }
+
+    function insertCodeIntoText(text, code) {
+      const words = text.split(' ');
+      const index = Math.floor(Math.random() * words.length);
+      words.splice(index, 0, code);
+      return words.join(' ');
+    }
+
+    function fetchQuote() {
+      const titles = [
+        'Albert Einstein', 'Winston Churchill', 'Abraham Lincoln', 'Oscar Wilde', 'Mark Twain',
+        'Mahatma Gandhi', 'Nelson Mandela', 'Steve Jobs', 'Marie Curie', 'Leonardo da Vinci',
+        'Isaac Newton', 'Socrates', 'Aristotle', 'Plato', 'Stephen Hawking',
+        'Carl Sagan', 'Nikola Tesla', 'Galileo Galilei', 'Charles Darwin', 'Alan Turing',
+        'Rosa Parks', 'Martin Luther King', 'Jane Austen', 'Virginia Woolf', 'Frida Kahlo'
+      ];
+      const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+      fetch(`https://en.wikiquote.org/w/api.php?action=query&format=json&origin=*&prop=extracts&explaintext&exsentences=40&titles=${encodeURIComponent(randomTitle)}`)
+        .then(res => res.json())
+        .then(data => {
+          const pages = data.query.pages;
+          const content = Object.values(pages)[0].extract.replace(/\n/g, ' ');
+          const cleanedText = getCompleteSentences(content);
+          const modifiedText = insertCodeIntoText(cleanedText, secretCode);
+          document.getElementById('quote').textContent = modifiedText;
+        })
+        .catch(() => {
+          document.getElementById('quote').textContent = 'failed to load quote.';
+        });
+    }
+
+    function showConfetti() {
+      document.getElementById('confettiCanvas').style.display = 'block';
+      const duration = 3 * 1000;
+      const end = Date.now() + duration;
+
+      (function frame() {
+        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#bb0000', '#ffffff'] });
+        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#00bb00', '#ffffff'] });
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        } else {
+          document.getElementById('confettiCanvas').style.display = 'none';
+        }
+      })();
+    }
+
+    function showExplosion() {
+      document.getElementById('explosion').style.display = 'block';
+      document.getElementById('explosionSound').play();
+      setTimeout(() => {
+        document.getElementById('explosion').style.display = 'none';
+      }, 2000);
+    }
+
+    function checkCode() {
+      const userInput = document.getElementById('userInput').value.trim();
+      if (userInput === secretCode) {
+        clearInterval(interval);
+        document.getElementById('message').textContent = '✅ bomb defused!';
+        document.getElementById('message').style.color = 'lightgreen';
+        document.getElementById('successSound').play();
+        showConfetti();
+      } else {
+        document.getElementById('message').textContent = '❌ wrong code!';
+        document.getElementById('message').style.color = 'orange';
+      }
+    }
+
+    function startCountdown() {
+      interval = setInterval(() => {
+        timer--;
+        document.getElementById('timer').textContent = timer;
+
+        if (timer === 0) {
+          clearInterval(interval);
+          document.getElementById('message').textContent = '💥 boom!';
+          document.getElementById('message').style.color = 'red';
+          showExplosion();
+        }
+      }, 1000);
+    }
+
+    function startGame() {
+      timer = 15;
+      document.getElementById('timer').textContent = timer;
+      document.getElementById('startButton').style.display = 'none';
+      document.getElementById('inputArea').style.display = 'block';
+      document.getElementById('bombImage').src = 'https://i.imgur.com/ZKcHdKd.png';
+      secretCode = generateCode();
+      fetchQuote();
+      startCountdown();
+    }
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' && document.getElementById('inputArea').style.display !== 'none') {
+        checkCode();
+      }
+    });
+  </script>
+</body>
+</html>
