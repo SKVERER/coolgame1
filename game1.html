@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Bomb Defusal Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,10 +41,7 @@
       background-size: cover;
       padding: 30px;
       user-select: none;
-      -webkit-user-select: none;
-      -moz-user-select: none;
       min-height: 150px;
-      background-color: transparent;
     }
     #inputArea {
       margin-top: 20px;
@@ -93,6 +90,17 @@
       display: none;
       z-index: 1000;
     }
+    #restartButton {
+      display: none;
+      margin-top: 20px;
+      font-size: 1.2em;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -108,6 +116,7 @@
   </div>
   <div id="message"></div>
   <button id="startButton" onclick="startGame()">start</button>
+  <button id="restartButton" onclick="restartGame()">🔁 play again</button>
   <div id="explosion"></div>
 
   <audio id="explosionSound" src="https://www.soundjay.com/explosion/explosion-01.mp3"></audio>
@@ -120,6 +129,7 @@
     let timer = 15;
     let interval;
     let secretCode = '';
+    let gameOver = false;
 
     function generateCode(length = 6) {
       const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -159,7 +169,7 @@
         'Rosa Parks', 'Martin Luther King', 'Jane Austen', 'Virginia Woolf', 'Frida Kahlo'
       ];
       const randomTitle = titles[Math.floor(Math.random() * titles.length)];
-      fetch(`https://en.wikiquote.org/w/api.php?action=query&format=json&origin=*&prop=extracts&explaintext&exsentences=40&titles=${encodeURIComponent(randomTitle)}`)
+      fetch(`https://en.wikiquote.org/w/api.php?action=query&format=json&origin=*&prop=extracts&explaintext&exsentences=30&titles=${encodeURIComponent(randomTitle)}`)
         .then(res => res.json())
         .then(data => {
           const pages = data.query.pages;
@@ -167,6 +177,7 @@
           const cleanedText = getCompleteSentences(content);
           const modifiedText = insertCodeIntoText(cleanedText, secretCode);
           document.getElementById('quote').textContent = modifiedText;
+          startCountdown();
         })
         .catch(() => {
           document.getElementById('quote').textContent = 'failed to load quote.';
@@ -177,10 +188,9 @@
       document.getElementById('confettiCanvas').style.display = 'block';
       const duration = 3 * 1000;
       const end = Date.now() + duration;
-
       (function frame() {
-        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#bb0000', '#ffffff'] });
-        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#00bb00', '#ffffff'] });
+        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
+        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
         if (Date.now() < end) {
           requestAnimationFrame(frame);
         } else {
@@ -198,6 +208,7 @@
     }
 
     function checkCode() {
+      if (gameOver) return;
       const userInput = document.getElementById('userInput').value.trim();
       if (userInput === secretCode) {
         clearInterval(interval);
@@ -205,6 +216,7 @@
         document.getElementById('message').style.color = 'lightgreen';
         document.getElementById('successSound').play();
         showConfetti();
+        endGame();
       } else {
         document.getElementById('message').textContent = '❌ wrong code!';
         document.getElementById('message').style.color = 'orange';
@@ -215,29 +227,41 @@
       interval = setInterval(() => {
         timer--;
         document.getElementById('timer').textContent = timer;
-
         if (timer === 0) {
           clearInterval(interval);
           document.getElementById('message').textContent = '💥 boom!';
           document.getElementById('message').style.color = 'red';
           showExplosion();
+          endGame();
         }
       }, 1000);
     }
 
     function startGame() {
       timer = 15;
+      gameOver = false;
       document.getElementById('timer').textContent = timer;
       document.getElementById('startButton').style.display = 'none';
       document.getElementById('inputArea').style.display = 'block';
       document.getElementById('bombImage').src = 'https://i.imgur.com/ZKcHdKd.png';
+      document.getElementById('message').textContent = '';
+      document.getElementById('userInput').value = '';
+      document.getElementById('restartButton').style.display = 'none';
       secretCode = generateCode();
       fetchQuote();
-      startCountdown();
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function endGame() {
+      gameOver = true;
+      document.getElementById('restartButton').style.display = 'inline-block';
     }
 
     document.addEventListener('keydown', function(event) {
-      if (event.key === 'Enter' && document.getElementById('inputArea').style.display !== 'none') {
+      if (event.key === 'Enter' && !gameOver && document.getElementById('inputArea').style.display !== 'none') {
         checkCode();
       }
     });
