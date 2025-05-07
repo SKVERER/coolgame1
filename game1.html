@@ -166,8 +166,15 @@
         'Mahatma Gandhi', 'Nelson Mandela', 'Steve Jobs', 'Marie Curie', 'Leonardo da Vinci',
         'Isaac Newton', 'Socrates', 'Aristotle', 'Plato', 'Stephen Hawking',
         'Carl Sagan', 'Nikola Tesla', 'Galileo Galilei', 'Charles Darwin', 'Alan Turing',
-        'Rosa Parks', 'Martin Luther King', 'Jane Austen', 'Virginia Woolf', 'Frida Kahlo'
+        'Rosa Parks', 'Martin Luther King', 'Jane Austen', 'Virginia Woolf', 'Frida Kahlo',
+        'Benjamin Franklin', 'Coco Chanel', 'Agatha Christie', 'Stephen King', 'George Orwell',
+        'Ernest Hemingway', 'F. Scott Fitzgerald', 'Herman Melville', 'Leo Tolstoy',
+        'J. K. Rowling', 'J. R. R. Tolkien', 'C. S. Lewis', 'Harper Lee', 'Margaret Atwood',
+        'Emily Dickinson', 'Maya Angelou', 'Simone de Beauvoir', 'Barack Obama', 'Theodore Roosevelt',
+        'Oprah Winfrey', 'Malala Yousafzai', 'Greta Thunberg', 'Elon Musk', 'Bill Gates',
+        'Ada Lovelace', 'Grace Hopper', 'Desmond Tutu', 'John F. Kennedy'
       ];
+
       const randomTitle = titles[Math.floor(Math.random() * titles.length)];
       fetch(`https://en.wikiquote.org/w/api.php?action=query&format=json&origin=*&prop=extracts&explaintext&exsentences=30&titles=${encodeURIComponent(randomTitle)}`)
         .then(res => res.json())
