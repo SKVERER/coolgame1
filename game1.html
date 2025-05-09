@@ -132,7 +132,7 @@
     let gameOver = false;
 
     function generateCode(length = 6) {
-      const chars = 'abcdefghijklmnopqrstuvwxyz123456789';
+      const chars = 'abcdefghijklmnopqrstuvwxyz23456789';
       let code = '';
       for (let i = 0; i < length; i++) {
         code += chars.charAt(Math.floor(Math.random() * chars.length));
