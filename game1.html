@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -79,16 +79,27 @@
       background: linear-gradient(45deg, #218838, #1e7e34);
       transform: scale(1.05);
     }
-    #explosion {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: url("https://media.tenor.com/images/7d6e6a3ae47f17830c498cd3bbba9fd1/tenor.gif") center center no-repeat;
-      background-size: cover;
+    #explosionEffect {
       display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 300px;
+      height: 300px;
+      margin-left: -150px;
+      margin-top: -150px;
+      background: radial-gradient(circle, orange, red, black);
+      border-radius: 50%;
       z-index: 1000;
+      pointer-events: none;
+    }
+    .exploding {
+      animation: explode 0.6s ease-out forwards;
+    }
+    @keyframes explode {
+      0% { transform: scale(0); opacity: 1; }
+      50% { transform: scale(3); opacity: 0.7; }
+      100% { transform: scale(5); opacity: 0; }
     }
     #restartButton {
       display: none;
@@ -117,7 +128,7 @@
   <div id="message"></div>
   <button id="startButton" onclick="startGame()">start</button>
   <button id="restartButton" onclick="restartGame()">🔁 play again</button>
-  <div id="explosion"></div>
+  <div id="explosionEffect"></div>
 
   <audio id="explosionSound" src="https://www.soundjay.com/mechanical/sounds/explosion-01.mp3"></audio>
   <audio id="successSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
@@ -219,11 +230,15 @@
     }
 
     function showExplosion() {
-      document.getElementById('explosion').style.display = 'block';
+      const explosion = document.getElementById('explosionEffect');
+      explosion.style.display = 'block';
+      explosion.classList.remove('exploding');
+      void explosion.offsetWidth;
+      explosion.classList.add('exploding');
       document.getElementById('explosionSound').play();
       setTimeout(() => {
-        document.getElementById('explosion').style.display = 'none';
-      }, 2000);
+        explosion.style.display = 'none';
+      }, 700);
     }
 
     function checkCode() {
@@ -234,6 +249,7 @@
         document.getElementById('message').textContent = '✅ bomb defused!';
         document.getElementById('message').style.color = 'lightgreen';
         document.getElementById('successSound').play();
+        document.getElementById('bombImage').src = 'https://i.imgur.com/Fx4n2LQ.png'; // חזרה לתמונה עם פתיל כבוי
         showConfetti();
         endGame();
       } else {
@@ -241,6 +257,7 @@
         document.getElementById('message').style.color = 'orange';
       }
     }
+
 
     function startCountdown() {
       interval = setInterval(() => {
